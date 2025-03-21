@@ -1,9 +1,15 @@
 // main.js
 
-// Import libraries from node_modules
-import Vex from "vexflow";
+// Import libraries (Vite or local modules)
+import {
+  Renderer,
+  Stave,
+  StaveNote,
+  Voice,
+  Formatter
+} from "vexflow";
 import * as Tone from "tone";
-import PianoChart from "piano-chart";
+import { Instrument } from "piano-chart";
 
 // Import your scale logic
 import {
@@ -18,7 +24,7 @@ import {
   mixolydianScale
 } from "./scalelogic.js";
 
-// We'll keep a reference to our piano-chart instance(s)
+// We'll keep references to our piano-chart instances
 let pianoScales = null;
 let pianoModes = null;
 
@@ -26,7 +32,6 @@ let pianoModes = null;
  * UTILS: RENDER STAFF WITH VEXFLOW
  ********************************************************************/
 function renderStaff(scaleText, containerId) {
-  // "C major is: C, D, E, F, G, A, B"
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -35,36 +40,36 @@ function renderStaff(scaleText, containerId) {
   // parse the portion after " is: "
   const pieces = scaleText.split(" is: ");
   if (pieces.length < 2) {
-    container.innerHTML = `<p>Cannot parse: ${scaleText}</p>`;
+    container.innerHTML = `<p style="color:red;">Cannot parse: ${scaleText}</p>`;
     return;
   }
   const noteArray = pieces[1].trim().split(",").map(n => n.trim());
 
-  // Setup VexFlow
-  const VF = Vex.Flow;
-  const renderer = new VF.Renderer(container, VF.Renderer.Backends.SVG);
-  renderer.resize(600, 160);
-  const context = renderer.getContext();
-  context.setFont("Arial", 10).setBackgroundFillStyle("#eed");
-
-  const stave = new VF.Stave(10, 20, 580);
-  stave.addClef("treble").setContext(context).draw();
-
-  // Convert e.g. "C#" => "c#/4"
-  function toVexKey(noteName) {
-    return noteName.toLowerCase() + "/4";
-  }
-
-  const vexNotes = noteArray.map(n => new VF.StaveNote({
-    clef: "treble",
-    keys: [toVexKey(n)],
-    duration: "q"
-  }));
-
-  const voice = new VF.Voice({ num_beats: vexNotes.length, beat_value: 4 });
-  voice.addTickables(vexNotes);
-  new VF.Formatter().joinVoices([voice]).format([voice], 550);
-  voice.draw(context, stave);
+    // Setup VexFlow
+    const renderer = new Renderer(container, Renderer.Backends.SVG);
+    renderer.resize(600, 160);
+    const context = renderer.getContext();
+    context.setFont("Arial", 10).setBackgroundFillStyle("#f8f8f8");
+  
+    const stave = new Stave(10, 20, 580);
+    stave.addClef("treble").setContext(context).draw();
+  
+    // Convert e.g. "C#" => "c#/4"
+    function toVexKey(noteName) {
+      return noteName.toLowerCase() + "/4";
+    }
+  
+    const vexNotes = noteArray.map(n => new StaveNote({
+      clef: "treble",
+      keys: [toVexKey(n)],
+      duration: "q",
+    }));
+  
+    const voice = new Voice({ numBeats: vexNotes.length, beatValue: 4 });
+    voice.addTickables(vexNotes);
+  
+    new Formatter().joinVoices([voice]).format([voice], 550);
+    voice.draw(context, stave);
 }
 
 /********************************************************************
@@ -79,7 +84,6 @@ function playScale(scaleText) {
   const now = Tone.now();
 
   noteArray.forEach((note, i) => {
-    // map "C#" => "C#4" 
     synth.triggerAttackRelease(note + "4", "8n", now + i * 0.5);
   });
 }
@@ -92,12 +96,16 @@ function initPiano(divId) {
   if (!el) return null;
 
   // create a new PianoChart instance
-  const piano = new PianoChart({
+  const myPiano = new Instrument({
     element: el,
     octaves: 2,
-    startOctave: 3
+    startOctave: 3,
+    whiteKeyColor: '#ffffff',
+    blackKeyColor: '#444444',
+    highlightColor: '#58cc02', // Duolingo-like green highlight
+    // Feel free to style further
   });
-  return piano;
+  return myPiano;
 }
 
 function highlightKeys(pianoInstance, scaleText) {
@@ -162,8 +170,7 @@ if (scaleForm) {
   playScaleBtn.addEventListener("click", () => {
     const text = document.getElementById("scaleResult").textContent;
     if (text) {
-      // must resume audio context after user gesture
-      Tone.start();
+      Tone.start(); // must resume audio context after user gesture
       playScale(text);
     }
   });

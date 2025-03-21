@@ -1,0 +1,202 @@
+/* styles.css */
+
+/* Reset */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* Colors inspired by Duolingo's green palette */
+:root {
+  --duo-green: #58cc02;
+  --duo-dark: #333;
+  --duo-light-bg: #f4f8ec;
+  --duo-white: #ffffff;
+}
+
+/* Body */
+body {
+  font-family: "Helvetica Neue", Arial, sans-serif;
+  background: var(--duo-light-bg);
+  color: var(--duo-dark);
+  margin: 0;
+}
+
+/* Header / Nav */
+header {
+  background: var(--duo-green);
+  color: var(--duo-white);
+  padding: 1rem;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0 0 0.25rem 0;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+nav a {
+  color: var(--duo-white);
+  text-decoration: none;
+  font-weight: bold;
+  transition: color 0.3s;
+}
+
+nav a:hover {
+  color: #cce7a5;
+}
+
+nav a.active {
+  text-decoration: underline;
+}
+
+/* Footer */
+footer {
+  background: #ececec;
+  text-align: center;
+  padding: 0.75rem;
+  margin-top: 2rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+/* Main layout */
+main {
+  padding: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Titles */
+.pageTitle {
+  color: var(--duo-green);
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+}
+
+.sectionTitle {
+  font-size: 1.2rem;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  color: var(--duo-green);
+}
+
+.introText {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+/* Card links on home */
+.cardContainer {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 2rem;
+}
+
+.homeCard {
+  background: #fff;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  width: 220px;
+  text-align: center;
+  text-decoration: none;
+  color: var(--duo-dark);
+  padding: 1rem;
+  transition: box-shadow 0.3s;
+}
+
+.homeCard:hover {
+  box-shadow: 0px 4px 12px rgba(0,0,0,0.15);
+}
+
+.homeCard h3 {
+  margin-bottom: 0.5rem;
+  color: var(--duo-green);
+}
+
+/* Forms */
+.duoForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  background: #fff;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #ddd;
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+}
+
+.formGroup label {
+  font-weight: bold;
+  margin-bottom: 0.3rem;
+}
+
+input[type="text"],
+select {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 120px;
+}
+
+/* Buttons */
+.actionBtn,
+.playBtn {
+  background: var(--duo-green);
+  color: var(--duo-white);
+  padding: 0.6rem 1.2rem;
+  border: none;
+  border-radius: 30px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.actionBtn:hover,
+.playBtn:hover {
+  background: #76d228;
+}
+
+/* Results */
+.result {
+  margin: 20px 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+  min-height: 1.5em;
+  color: #111;
+}
+
+/* Staff Container */
+.staffContainer {
+  margin-top: 1rem;
+}
+
+/* Piano container */
+.pianoContainer {
+  margin: 20px 0;
+  text-align: center;
+}
+
+/* A little style for the VexFlow background */
+#scaleStaff svg,
+#modeStaff svg {
+  background: #ffffff;
+  border-radius: 5px;
+  border: 1px solid #ddd;
+}

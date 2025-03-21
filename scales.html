@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Music Theory – Scales</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Scales</h1>
+      <nav>
+        <ul>
+          <li><a href="./index.html">Home</a></li>
+          <li><a href="./scales.html" class="active">Scales</a></li>
+          <li><a href="./modes.html">Modes</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <h2 class="pageTitle">Major, Minor, and Chromatic Scales</h2>
+
+      <form id="scaleForm" class="duoForm">
+        <div class="formGroup">
+          <label for="scaleRoot">Root Note:</label>
+          <input
+            type="text"
+            id="scaleRoot"
+            placeholder="e.g. C, G#, Bb"
+            required
+          />
+        </div>
+
+        <div class="formGroup">
+          <label for="scaleType">Scale Type:</label>
+          <select id="scaleType">
+            <option value="major">Major</option>
+            <option value="naturalMinor">Natural Minor</option>
+            <option value="harmonicMinor">Harmonic Minor</option>
+            <option value="melodicMinor">Melodic Minor</option>
+            <option value="chromatic">Chromatic</option>
+          </select>
+        </div>
+
+        <button type="submit" class="actionBtn">Show Scale</button>
+      </form>
+
+      <div id="scaleResult" class="result"></div>
+
+      <button id="playScaleBtn" type="button" class="playBtn">Play Scale</button>
+
+      <div id="scaleStaff" class="staffContainer"></div>
+
+      <h3 class="sectionTitle">Piano Visualization</h3>
+      <div id="pianoDiv" class="pianoContainer"></div>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Your Name – All Rights Reserved</p>
+    </footer>
+
+    <!-- Our main script -->
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>

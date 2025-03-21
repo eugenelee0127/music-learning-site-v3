@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Music Theory – Modes</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Modes</h1>
+      <nav>
+        <ul>
+          <li><a href="./index.html">Home</a></li>
+          <li><a href="./scales.html">Scales</a></li>
+          <li><a href="./modes.html" class="active">Modes</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <main>
+      <h2 class="pageTitle">Dorian, Phrygian, Lydian, Mixolydian</h2>
+
+      <form id="modeForm" class="duoForm">
+        <div class="formGroup">
+          <label for="modeRoot">Root Note:</label>
+          <input
+            type="text"
+            id="modeRoot"
+            placeholder="e.g. C, G#, Bb"
+            required
+          />
+        </div>
+
+        <div class="formGroup">
+          <label for="modeType">Mode:</label>
+          <select id="modeType">
+            <option value="dorian">Dorian</option>
+            <option value="phrygian">Phrygian</option>
+            <option value="lydian">Lydian</option>
+            <option value="mixolydian">Mixolydian</option>
+          </select>
+        </div>
+
+        <button type="submit" class="actionBtn">Show Mode</button>
+      </form>
+
+      <div id="modeResult" class="result"></div>
+
+      <button id="playModeBtn" type="button" class="playBtn">Play Mode</button>
+
+      <div id="modeStaff" class="staffContainer"></div>
+
+      <h3 class="sectionTitle">Piano Visualization</h3>
+      <div id="pianoModeDiv" class="pianoContainer"></div>
+    </main>
+
+    <footer>
+      <p>&copy; 2025 Your Name – All Rights Reserved</p>
+    </footer>
+
+    <!-- Our main script -->
+    <script type="module" src="./main.js"></script>
+  </body>
+</html>
