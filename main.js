@@ -6,7 +6,8 @@ import {
   Stave,
   StaveNote,
   Voice,
-  Formatter
+  Formatter,
+  KeySignature
 } from "vexflow";
 import * as Tone from "tone";
 import { Instrument } from "piano-chart";
@@ -24,56 +25,175 @@ import {
   mixolydianScale
 } from "./scalelogic.js";
 
-// We'll keep references to our piano-chart instances
-let pianoScales = null;
-let pianoModes = null;
-
 /********************************************************************
- * UTILS: RENDER STAFF WITH VEXFLOW
+ * 1) A narrower note+octave array: from C4 through B6
+ *    so that "middle C" lines up with one ledger line below treble staff.
  ********************************************************************/
-function renderStaff(scaleText, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
+const ALL_NOTES_WITH_OCTAVES = [
+  "C4","C#4","Db4","D4","D#4","Eb4","E4","Fb4","F4","F#4","Gb4","G4","G#4","Ab4","A4","A#4","Bb4","B4",
+  "C5","C#5","Db5","D5","D#5","Eb5","E5","Fb5","F5","F#5","Gb5","G5","G#5","Ab5","A5","A#5","Bb5","B5",
+  "C6","C#6","Db6","D6","D#6","Eb6","E6","Fb6","F6","F#6","Gb6","G6","G#6","Ab6","A6","A#6","Bb6","B6"
+];
 
-  container.innerHTML = ""; // clear old
-
-  // parse the portion after " is: "
-  const pieces = scaleText.split(" is: ");
-  if (pieces.length < 2) {
-    container.innerHTML = `<p style="color:red;">Cannot parse: ${scaleText}</p>`;
-    return;
-  }
-  const noteArray = pieces[1].trim().split(",").map(n => n.trim());
-
-    // Setup VexFlow
-    const renderer = new Renderer(container, Renderer.Backends.SVG);
-    renderer.resize(600, 160);
-    const context = renderer.getContext();
-    context.setFont("Arial", 10).setBackgroundFillStyle("#f8f8f8");
-  
-    const stave = new Stave(10, 20, 580);
-    stave.addClef("treble").setContext(context).draw();
-  
-    // Convert e.g. "C#" => "c#/4"
-    function toVexKey(noteName) {
-      return noteName.toLowerCase() + "/4";
-    }
-  
-    const vexNotes = noteArray.map(n => new StaveNote({
-      clef: "treble",
-      keys: [toVexKey(n)],
-      duration: "q",
-    }));
-  
-    const voice = new Voice({ numBeats: vexNotes.length, beatValue: 4 });
-    voice.addTickables(vexNotes);
-  
-    new Formatter().joinVoices([voice]).format([voice], 550);
-    voice.draw(context, stave);
+// We’ll map flats to sharps in order to locate them in ALL_NOTES_WITH_OCTAVES easily.
+function normalizeToSharp(noteName) {
+  return noteName
+    .replace(/^Db$/i, "C#")
+    .replace(/^Eb$/i, "D#")
+    .replace(/^Gb$/i, "F#")
+    .replace(/^Ab$/i, "G#")
+    .replace(/^Bb$/i, "A#");
 }
 
 /********************************************************************
- * UTILS: PLAY NOTES WITH TONE
+ * 2) Convert text scale → array of ascending pitch strings for VexFlow
+ ********************************************************************/
+function createAscendingVexKeys(scaleText) {
+  const pieces = scaleText.split(" is: ");
+  if (pieces.length < 2) return [];
+  const noteArray = pieces[1].trim().split(",").map(n => n.trim());
+
+  // Start searching from the first occurrence at or after C4
+  const firstNote = normalizeToSharp(noteArray[0]);
+  let startIndex = 0;
+  // We find the earliest place in ALL_NOTES_WITH_OCTAVES
+  // that matches the root, or default to 0 if not found.
+  let foundIndex = ALL_NOTES_WITH_OCTAVES.findIndex(n => n.startsWith(firstNote));
+  if (foundIndex < 0) foundIndex = 0;
+  startIndex = foundIndex;
+
+  let currentSearchIndex = startIndex;
+  const vexKeys = [];
+
+  noteArray.forEach(rawNote => {
+    const sharpEquivalent = normalizeToSharp(rawNote);
+    // from currentSearchIndex forward, find the next matching prefix
+    let foundPos = -1;
+    for (let i = currentSearchIndex; i < ALL_NOTES_WITH_OCTAVES.length; i++) {
+      if (ALL_NOTES_WITH_OCTAVES[i].startsWith(sharpEquivalent)) {
+        foundPos = i;
+        break;
+      }
+    }
+    if (foundPos === -1) {
+      // If we fail, just push "c/4" as fallback
+      vexKeys.push("c/4");
+    } else {
+      const full = ALL_NOTES_WITH_OCTAVES[foundPos]; // e.g. "C#4"
+      const oct = full.slice(-1); // last character is the octave
+      const notePart = full.slice(0, full.length - 1); // e.g. "C#" or "Db"
+      const letter = notePart[0].toLowerCase();
+      const accidental = notePart.slice(1); // e.g. "#"
+
+      vexKeys.push(letter + accidental + "/" + oct);
+      currentSearchIndex = foundPos + 1;
+    }
+  });
+
+  return vexKeys;
+}
+
+/********************************************************************
+ * 3) Compute staff width dynamically & get key signature
+ ********************************************************************/
+function computeStaffWidth(numNotes) {
+  const minWidth = 600;
+  const widthPerNote = 60;
+  const w = numNotes * widthPerNote;
+  return w < minWidth ? minWidth : w;
+}
+
+// A simple map from root+scaleType → the string VexFlow uses.
+function getKeySignature(root, scaleType) {
+  const keyMap = {
+    // major keys
+    "Cmajor": "C",
+    "Gmajor": "G",
+    "Dmajor": "D",
+    "Amajor": "A",
+    "Emajor": "E",
+    "Bmajor": "B",
+    "F#major": "F#",
+    "C#major": "C#",
+    "Fmajor": "F",
+    "Bbmajor": "Bb",
+    "Ebmajor": "Eb",
+    "Abmajor": "Ab",
+    "Dbmajor": "Db",
+    "Gbmajor": "Gb",
+    // natural minors
+    "AnaturalMinor": "Am",
+    "EnaturalMinor": "Em",
+    "BnaturalMinor": "Bm",
+    "F#naturalMinor": "F#m",
+    "C#naturalMinor": "C#m",
+    "G#naturalMinor": "G#m",
+    "D#naturalMinor": "D#m",
+    "A#naturalMinor": "A#m",
+    "DnaturalMinor": "Dm",
+    "GnaturalMinor": "Gm",
+    "CnaturalMinor": "Cm",
+    "FnaturalMinor": "Fm",
+    "BbnaturalMinor": "Bbm",
+    "EbnaturalMinor": "Ebm",
+    "AbnaturalMinor": "Abm"
+    // Expand if needed for harmonic/melodic or for modes.
+  };
+  const cleanRoot = root.replace(/\s+/g, "");
+  const key = cleanRoot + scaleType;
+  return keyMap[key] || "";
+}
+
+/********************************************************************
+ * 4) Render staff with VexFlow
+ ********************************************************************/
+function renderStaff(scaleText, containerId, clef, scaleType, rootNote) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+
+  container.innerHTML = ""; // clear old content
+
+  const vexKeys = createAscendingVexKeys(scaleText);
+  if (!vexKeys.length) {
+    container.innerHTML = `<p style="color:red;">No valid notes to render.</p>`;
+    return;
+  }
+
+  const width = computeStaffWidth(vexKeys.length);
+  const renderer = new Renderer(container, Renderer.Backends.SVG);
+
+  // Slightly taller so ledger lines for C4 etc. aren't cut off
+  renderer.resize(width, 220);
+
+  const context = renderer.getContext();
+  context.setFont("Arial", 10).setBackgroundFillStyle("#f8f8f8");
+
+  const stave = new Stave(10, 20, width - 20);
+  stave.addClef(clef);
+
+  // Add key signature for certain scale types
+  const vexflowKeySig = getKeySignature(rootNote, scaleType);
+  if (vexflowKeySig) {
+    stave.addKeySignature(vexflowKeySig);
+  }
+
+  stave.setContext(context).draw();
+
+  const notes = vexKeys.map(k => new StaveNote({
+    clef: clef,
+    keys: [k],
+    duration: "q"
+  }));
+
+  const voice = new Voice({ numBeats: notes.length, beatValue: 4 });
+  voice.addTickables(notes);
+
+  new Formatter().joinVoices([voice]).format([voice], width - 60);
+  voice.draw(context, stave);
+}
+
+/********************************************************************
+ * 5) Play notes with Tone.js
  ********************************************************************/
 function playScale(scaleText) {
   const pieces = scaleText.split(" is: ");
@@ -83,29 +203,27 @@ function playScale(scaleText) {
   const synth = new Tone.Synth().toDestination();
   const now = Tone.now();
 
+  // We’ll just do everything in octave 4 for audio
   noteArray.forEach((note, i) => {
     synth.triggerAttackRelease(note + "4", "8n", now + i * 0.5);
   });
 }
 
 /********************************************************************
- * UTILS: INIT PIANO-CHART AND HIGHLIGHT KEYS
+ * 6) Piano-chart highlighting
  ********************************************************************/
 function initPiano(divId) {
   const el = document.getElementById(divId);
   if (!el) return null;
 
-  // create a new PianoChart instance
-  const myPiano = new Instrument({
+  return new Instrument({
     element: el,
     octaves: 2,
     startOctave: 3,
     whiteKeyColor: '#ffffff',
     blackKeyColor: '#444444',
-    highlightColor: '#58cc02', // Duolingo-like green highlight
-    // Feel free to style further
+    highlightColor: '#58cc02'
   });
-  return myPiano;
 }
 
 function highlightKeys(pianoInstance, scaleText) {
@@ -115,25 +233,24 @@ function highlightKeys(pianoInstance, scaleText) {
   if (pieces.length < 2) return;
   const noteArray = pieces[1].trim().split(",").map(n => n.trim());
 
-  // Clear old highlights
   pianoInstance.resetHighlights();
-  // highlight e.g. "c#4", "d4" ...
   const highlights = noteArray.map(n => n.toLowerCase() + "4");
   pianoInstance.highlight(highlights, "blue");
 }
 
 /********************************************************************
- * PAGE-SPECIFIC LOGIC: SCALES
+ * 7) Scales page
  ********************************************************************/
+let pianoScales = null;
 const scaleForm = document.getElementById("scaleForm");
 if (scaleForm) {
-  // init the piano for scales
   pianoScales = initPiano("pianoDiv");
 
   scaleForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const root = document.getElementById("scaleRoot").value;
+    const root = document.getElementById("scaleRoot").value.trim();
     const scaleType = document.getElementById("scaleType").value;
+    const clef = document.getElementById("scaleClef").value;
 
     let output = "";
     switch (scaleType) {
@@ -160,34 +277,35 @@ if (scaleForm) {
     scaleResult.textContent = output;
 
     // Render staff
-    renderStaff(output, "scaleStaff");
+    renderStaff(output, "scaleStaff", clef, scaleType, root);
+
     // highlight piano
     highlightKeys(pianoScales, output);
   });
 
-  // PLAY button
   const playScaleBtn = document.getElementById("playScaleBtn");
   playScaleBtn.addEventListener("click", () => {
     const text = document.getElementById("scaleResult").textContent;
     if (text) {
-      Tone.start(); // must resume audio context after user gesture
+      Tone.start();
       playScale(text);
     }
   });
 }
 
 /********************************************************************
- * PAGE-SPECIFIC LOGIC: MODES
+ * 8) Modes page
  ********************************************************************/
+let pianoModes = null;
 const modeForm = document.getElementById("modeForm");
 if (modeForm) {
-  // init piano for modes
   pianoModes = initPiano("pianoModeDiv");
 
   modeForm.addEventListener("submit", (e) => {
     e.preventDefault();
-    const root = document.getElementById("modeRoot").value;
+    const root = document.getElementById("modeRoot").value.trim();
     const modeType = document.getElementById("modeType").value;
+    const clef = document.getElementById("modeClef").value;
 
     let output = "";
     switch (modeType) {
@@ -211,12 +329,12 @@ if (modeForm) {
     modeResult.textContent = output;
 
     // Render staff
-    renderStaff(output, "modeStaff");
+    renderStaff(output, "modeStaff", clef, modeType, root);
+
     // highlight piano
     highlightKeys(pianoModes, output);
   });
 
-  // PLAY mode
   const playModeBtn = document.getElementById("playModeBtn");
   playModeBtn.addEventListener("click", () => {
     const text = document.getElementById("modeResult").textContent;

@@ -182,9 +182,12 @@ select {
   color: #111;
 }
 
-/* Staff Container */
+/* Staff container */
 .staffContainer {
   margin-top: 1rem;
+  /* allow horizontal scrolling if the staff is wide */
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
 /* Piano container */
@@ -193,7 +196,6 @@ select {
   text-align: center;
 }
 
-/* A little style for the VexFlow background */
 #scaleStaff svg,
 #modeStaff svg {
   background: #ffffff;
